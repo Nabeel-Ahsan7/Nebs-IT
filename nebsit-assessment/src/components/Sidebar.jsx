@@ -1,85 +1,207 @@
 import React, { useState } from 'react';
 import {
-    LayoutDashboard, Users, Box, FileText,
-    Calendar, MessageSquare, Database, Folder,
-    Clipboard, Activity, LogOut, User
-} from 'lucide-react'; // Using Lucide icons to match your UI
+    LayoutDashboard,
+    Users,
+    Box,
+    FileText,
+    Calendar,
+    MessageSquare,
+    Database,
+    Folder,
+    Clipboard,
+    Activity,
+    LogOut,
+    User,
+    ChevronDown
+} from 'lucide-react';
+import './Sidebar.css';
 
 const Sidebar = () => {
-    const [isEmployeeOpen, setIsEmployeeOpen] = useState(true);
+    const [openDropdowns, setOpenDropdowns] = useState({
+        Employee: true,
+        'Career Database': false
+    });
 
     const navItems = [
-        { name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
         {
-            name: 'Employee',
-            icon: <Users size={20} />,
-            hasSubmenu: true,
-            subItems: ['Employee Database', 'Add New Employee', 'Performance Report', 'Performance History']
+            id: 1,
+            name: 'Dashboard',
+            icon: LayoutDashboard,
+            hasDropdown: false
         },
-        { name: 'Payroll', icon: <Box size={20} /> },
-        { name: 'Pay Slip', icon: <FileText size={20} /> },
-        { name: 'Attendance', icon: <Calendar size={20} /> },
-        { name: 'Request Center', icon: <MessageSquare size={20} /> },
-        { name: 'Career Database', icon: <Database size={20} />, hasSubmenu: true },
-        { name: 'Document manager', icon: <Folder size={20} /> },
-        { name: 'Notice Board', icon: <Clipboard size={20} /> },
-        { name: 'Activity Log', icon: <Activity size={20} /> },
-        { name: 'Exit Interview', icon: <LogOut size={20} /> },
-        { name: 'Profile', icon: <User size={20} /> },
+        {
+            id: 2,
+            name: 'Employee',
+            icon: Users,
+            hasDropdown: true,
+            subItems: [
+                'Employee Database',
+                'Add New Employee',
+                'Performance Report',
+                'Performance History'
+            ]
+        },
+        {
+            id: 3,
+            name: 'Payroll',
+            icon: Box,
+            hasDropdown: false
+        },
+        {
+            id: 4,
+            name: 'Pay Slip',
+            icon: FileText,
+            hasDropdown: false
+        },
+        {
+            id: 5,
+            name: 'Attendance',
+            icon: Calendar,
+            hasDropdown: false
+        },
+        {
+            id: 6,
+            name: 'Request Center',
+            icon: MessageSquare,
+            hasDropdown: false
+        },
+        {
+            id: 7,
+            name: 'Career Database',
+            icon: Database,
+            hasDropdown: true,
+            subItems: []
+        },
+        {
+            id: 8,
+            name: 'Document Manager',
+            icon: Folder,
+            hasDropdown: false
+        },
+        {
+            id: 9,
+            name: 'Notice Board',
+            icon: Clipboard,
+            hasDropdown: false
+        },
+        {
+            id: 10,
+            name: 'Activity Log',
+            icon: Activity,
+            hasDropdown: false
+        },
+        {
+            id: 11,
+            name: 'Exit Interview',
+            icon: LogOut,
+            hasDropdown: false
+        },
+        {
+            id: 12,
+            name: 'Profile',
+            icon: User,
+            hasDropdown: false
+        }
     ];
 
+    const toggleDropdown = (itemName) => {
+        setOpenDropdowns(prev => ({
+            ...prev,
+            [itemName]: !prev[itemName]
+        }));
+    };
+
     return (
-        <aside
-            className="bg-white flex flex-col h-[1090px] w-[257px] py-[34px] px-[24px] border-r border-[#F5F6FA]"
-            style={{ boxShadow: '0px 1px 2px 0px rgba(0, 0, 0, 0.12)' }}
-        >
+        <aside className="sidebar">
             {/* Logo Section */}
-            <div className="mb-[50px] flex items-center px-2">
-                <div className="flex items-center gap-2">
-                    {/* Replace with your actual SVG logo */}
-                    <div className="w-8 h-8 bg-orange-600 rounded-sm"></div>
-                    <span className="text-2xl font-bold text-slate-900 tracking-tight">Nebs-IT</span>
-                </div>
+            <div className="sidebar-logo">
+                <img
+                    src="https://www.nebs-it.com/_next/static/media/logo.cd876701.png"
+                    alt="Nebs-IT Logo"
+                    className="logo-image"
+                />
             </div>
 
-            {/* Navigation Links */}
-            <nav className="flex-1 space-y-1 overflow-y-auto">
-                {navItems.map((item) => (
-                    <div key={item.name}>
-                        <button
-                            onClick={() => item.hasSubmenu && setIsEmployeeOpen(!isEmployeeOpen)}
-                            className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors
-                ${item.name === 'Employee' ? 'bg-[#F8F9FB] text-slate-800' : 'text-slate-500 hover:bg-gray-50'}`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className={item.name === 'Employee' ? 'text-slate-600' : 'text-slate-400'}>
-                                    {item.icon}
-                                </span>
-                                <span className="text-[14px] font-medium">{item.name}</span>
-                            </div>
-                            {item.hasSubmenu && (
-                                <svg className={`w-4 h-4 transition-transform ${isEmployeeOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                                </svg>
-                            )}
-                        </button>
+            {/* Navigation List */}
+            <nav className="sidebar-nav">
+                <ul className="nav-list">
+                    {navItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = item.name === 'Employee';
+                        const isOpen = openDropdowns[item.name];
 
-                        {/* Submenu Logic */}
-                        {item.hasSubmenu && item.subItems && isEmployeeOpen && (
-                            <div className="mt-1 ml-10 space-y-2">
-                                {item.subItems.map((sub) => (
-                                    <a
-                                        key={sub}
-                                        href="#"
-                                        className="block py-2 text-[13px] text-slate-600 hover:text-slate-900 transition-colors"
-                                    >
-                                        {sub}
-                                    </a>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                ))}
+                        return (
+                            <li key={item.id} className="nav-item">
+                                {/* Active/Expanded Employee Item Container */}
+                                {isActive && isOpen ? (
+                                    <div className="active-dropdown-container">
+                                        {/* Main Navigation Item */}
+                                        <button
+                                            onClick={() => item.hasDropdown && toggleDropdown(item.name)}
+                                            className="nav-button active"
+                                        >
+                                            <div className="nav-content">
+                                                <Icon size={20} className="nav-icon active-icon" />
+                                                <span className="nav-text active-text">{item.name}</span>
+                                            </div>
+                                            {item.hasDropdown && (
+                                                <ChevronDown
+                                                    size={16}
+                                                    className={`chevron ${isOpen ? 'rotate' : ''}`}
+                                                />
+                                            )}
+                                        </button>
+
+                                        {/* Dropdown Sub-menu */}
+                                        {item.subItems && item.subItems.length > 0 && (
+                                            <ul className="submenu">
+                                                {item.subItems.map((subItem, index) => (
+                                                    <li key={index}>
+                                                        <button className="submenu-button">
+                                                            {subItem}
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Regular Navigation Item */}
+                                        <button
+                                            onClick={() => item.hasDropdown && toggleDropdown(item.name)}
+                                            className="nav-button"
+                                        >
+                                            <div className="nav-content">
+                                                <Icon size={20} className="nav-icon" />
+                                                <span className="nav-text">{item.name}</span>
+                                            </div>
+                                            {item.hasDropdown && (
+                                                <ChevronDown
+                                                    size={16}
+                                                    className={`chevron ${isOpen ? 'rotate' : ''}`}
+                                                />
+                                            )}
+                                        </button>
+
+                                        {/* Dropdown Sub-menu for non-active items */}
+                                        {item.hasDropdown && isOpen && item.subItems && item.subItems.length > 0 && (
+                                            <ul className="submenu-regular">
+                                                {item.subItems.map((subItem, index) => (
+                                                    <li key={index}>
+                                                        <button className="submenu-button">
+                                                            {subItem}
+                                                        </button>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ul>
             </nav>
         </aside>
     );
