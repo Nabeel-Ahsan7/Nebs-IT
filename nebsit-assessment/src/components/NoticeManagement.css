@@ -1,0 +1,286 @@
+/* Notice Management Container - Figma Specs */
+.notice-management {
+    width: calc(100% - 32px);
+    height: auto;
+    min-height: 58px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin: 24px 8px 24px 24px;
+    opacity: 1;
+    box-sizing: border-box;
+}
+
+/* Left Side - Title and Stats */
+.notice-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 0 0 auto;
+    min-width: 0;
+}
+
+/* Notice Title */
+.notice-title {
+    width: auto;
+    max-width: 245px;
+    height: 28px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 20px;
+    line-height: 28px;
+    letter-spacing: 0%;
+    color: #0F172A;
+    margin: 0;
+    opacity: 1;
+    white-space: nowrap;
+}
+
+/* Notice Stats */
+.notice-stats {
+    width: auto;
+    max-width: 245px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 14px;
+    line-height: 22px;
+    letter-spacing: 0%;
+    color: #64748B;
+    opacity: 1;
+    flex-wrap: wrap;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-item.stat-active {
+    color: #00A46E;
+}
+
+.stat-item.stat-draft {
+    color: #FFA307;
+}
+
+.stat-value {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 14px;
+    line-height: 22px;
+    letter-spacing: 0%;
+}
+
+.stat-active {
+    color: #00A46E;
+}
+
+.stat-draft {
+    color: #FFA307;
+}
+
+.stat-separator {
+    flex-shrink: 0;
+    color: #CBD5E1;
+}
+
+/* Right Side - Buttons */
+.notice-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+    flex-wrap: nowrap;
+    margin-left: auto;
+}
+
+/* Create Notice Button */
+.btn-create-notice {
+    width: 137px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: #FF6B2C;
+    color: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 14px;
+    line-height: 20px;
+    cursor: pointer;
+    opacity: 1;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.btn-create-notice:hover {
+    background-color: #E55A1F;
+    transform: translateY(-1px);
+    box-shadow: 0px 4px 8px rgba(255, 107, 44, 0.2);
+}
+
+.btn-create-notice:active {
+    transform: translateY(0);
+}
+
+.btn-icon {
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1;
+}
+
+/* All Draft Notice Button */
+.btn-draft-notice {
+    width: 154px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid #F59E0B;
+    border-radius: 8px;
+    background-color: #FFFFFF;
+    color: #F59E0B;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-style: normal;
+    font-size: 14px;
+    line-height: 22px;
+    letter-spacing: 0%;
+    vertical-align: middle;
+    cursor: pointer;
+    opacity: 1;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.btn-draft-notice:hover {
+    background-color: #FEF3C7;
+    border-color: #F59E0B;
+}
+
+.btn-draft-notice:active {
+    background-color: #FDE68A;
+}
+
+.draft-icon {
+    width: 20px;
+    height: 20px;
+    color: #F59E0B;
+    flex-shrink: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .notice-management {
+        max-width: 100%;
+        margin: 20px;
+    }
+}
+
+@media (max-width: 992px) {
+    .notice-management {
+        margin: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .notice-management {
+        flex-wrap: wrap;
+        gap: 16px;
+        margin: 16px;
+    }
+
+    .notice-left {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .notice-title {
+        font-size: 18px;
+    }
+
+    .notice-stats {
+        font-size: 13px;
+    }
+
+    .notice-right {
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 600px) {
+    .notice-management {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .notice-left {
+        width: 100%;
+    }
+
+    .notice-right {
+        width: 100%;
+        justify-content: flex-end;
+        margin-left: 0;
+    }
+
+    .btn-create-notice {
+        width: auto;
+        min-width: 115px;
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+
+    .btn-draft-notice {
+        width: auto;
+        min-width: 125px;
+        font-size: 13px;
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 400px) {
+    .notice-management {
+        margin: 12px;
+        gap: 12px;
+    }
+
+    .notice-title {
+        font-size: 16px;
+    }
+
+    .notice-stats {
+        font-size: 12px;
+        gap: 12px;
+    }
+
+    .notice-right {
+        flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
+    }
+
+    .btn-create-notice,
+    .btn-draft-notice {
+        width: 100%;
+        min-width: auto;
+    }
+}

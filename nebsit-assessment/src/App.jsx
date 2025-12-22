@@ -1,5 +1,6 @@
 import Sidebar from './components/Sidebar'
 import Header from './components/Header'
+import NoticeManagement from './components/NoticeManagement'
 
 function App() {
   return (
@@ -8,6 +9,7 @@ function App() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Header />
         <main style={{ flex: 1, backgroundColor: '#FAFAFA' }}>
+          <NoticeManagement />
         </main>
       </div>
     </div>

@@ -168,7 +168,7 @@
     .header {
         padding: 0 24px;
     }
-    
+
     .greeting {
         font-size: 15px;
     }
@@ -179,27 +179,27 @@
         padding: 0 16px;
         height: 64px;
     }
-    
+
     .header-left {
         min-width: 120px;
     }
-    
+
     .greeting {
         font-size: 14px;
     }
-    
+
     .date {
         font-size: 12px;
     }
-    
+
     .header-right {
         gap: 12px;
     }
-    
+
     .user-info {
         display: none;
     }
-    
+
     .separator {
         display: none;
     }
@@ -210,7 +210,7 @@
         padding: 0 12px;
     }
 }
-}
+
 
 .profile-img {
     width: 100%;
