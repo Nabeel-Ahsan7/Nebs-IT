@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { FileText, Calendar, Eye, Edit, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import './NoticeManagement.css';
 
-const NoticeManagement = () => {
+const NoticeManagement = ({ onCreateNotice }) => {
     const activeNotices = 8;
     const draftNotices = 4;
 
@@ -125,7 +125,7 @@ const NoticeManagement = () => {
 
                 {/* Right Side - Action Buttons */}
                 <div className="notice-right">
-                    <button className="btn-create-notice">
+                    <button className="btn-create-notice" onClick={onCreateNotice}>
                         <span className="btn-icon">+</span>
                         Create Notice
                     </button>

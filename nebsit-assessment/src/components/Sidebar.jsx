@@ -16,11 +16,19 @@ import {
 } from 'lucide-react';
 import './Sidebar.css';
 
-const Sidebar = () => {
+const Sidebar = ({ onNavigate }) => {
     const [openDropdowns, setOpenDropdowns] = useState({
         Employee: true,
         'Career Database': false
     });
+    const [activeItem, setActiveItem] = useState('Notice Board');
+
+    const handleNavClick = (itemName) => {
+        setActiveItem(itemName);
+        if (itemName === 'Notice Board' && onNavigate) {
+            onNavigate('notice-management');
+        }
+    };
 
     const navItems = [
         {
@@ -137,7 +145,13 @@ const Sidebar = () => {
                                     <div className="active-dropdown-container">
                                         {/* Main Navigation Item */}
                                         <button
-                                            onClick={() => item.hasDropdown && toggleDropdown(item.name)}
+                                            onClick={() => {
+                                                if (item.hasDropdown) {
+                                                    toggleDropdown(item.name);
+                                                } else {
+                                                    handleNavClick(item.name);
+                                                }
+                                            }}
                                             className="nav-button active"
                                         >
                                             <div className="nav-content">
@@ -169,7 +183,13 @@ const Sidebar = () => {
                                     <>
                                         {/* Regular Navigation Item */}
                                         <button
-                                            onClick={() => item.hasDropdown && toggleDropdown(item.name)}
+                                            onClick={() => {
+                                                if (item.hasDropdown) {
+                                                    toggleDropdown(item.name);
+                                                } else {
+                                                    handleNavClick(item.name);
+                                                }
+                                            }}
                                             className="nav-button"
                                         >
                                             <div className="nav-content">
