@@ -945,7 +945,7 @@ app.use(cors({
 ## Contact & Support
 
 For API support or questions:
-- Email: support@nebsit.com
+- Email: nabeelahsanofficial@gmail.com
 - Documentation: http://localhost:5000/api-docs
 
 ---
