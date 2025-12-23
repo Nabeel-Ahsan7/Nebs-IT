@@ -61,7 +61,8 @@ router.get('/', async (req, res) => {
             department_id,
             employee_id,
             published_date,
-            search
+            search,
+            publishStatus
         } = req.query;
 
         // Build filter object
@@ -93,10 +94,53 @@ router.get('/', async (req, res) => {
             };
         }
 
+        // Handle publishStatus filter (published vs unpublished)
+        if (publishStatus === 'published') {
+            // Published means status=1 AND (no date OR date <= today)
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            filter.$and = [
+                { status: 1 },
+                {
+                    $or: [
+                        { published_date: { $exists: false } },
+                        { published_date: null },
+                        { published_date: { $lte: today } }
+                    ]
+                }
+            ];
+        } else if (publishStatus === 'unpublished') {
+            // Unpublished means status=1 AND date > today
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            filter.$and = [
+                { status: 1 },
+                { published_date: { $gte: tomorrow } }
+            ];
+        }
+
+        // Handle search across multiple fields including employee
+        let notices;
+        let total;
         if (search) {
+            // First, find matching employees
+            const Employee = require('../models/Employee');
+            const matchingEmployees = await Employee.find({
+                $or: [
+                    { employee_code: { $regex: search, $options: 'i' } },
+                    { name: { $regex: search, $options: 'i' } }
+                ]
+            }).select('_id');
+
+            const employeeIds = matchingEmployees.map(emp => emp._id);
+
+            // Search in notices with employee match included
             filter.$or = [
                 { title: { $regex: search, $options: 'i' } },
-                { notice_body: { $regex: search, $options: 'i' } }
+                { notice_body: { $regex: search, $options: 'i' } },
+                { employee_id: { $in: employeeIds } }
             ];
         }
 
@@ -106,10 +150,10 @@ router.get('/', async (req, res) => {
         const skip = (pageNum - 1) * limitNum;
 
         // Get total count for pagination
-        const total = await Notice.countDocuments(filter);
+        total = await Notice.countDocuments(filter);
 
         // Get notices with population
-        const notices = await Notice.find(filter)
+        notices = await Notice.find(filter)
             .populate('department_id', 'name')
             .populate('employee_id', 'employee_code name')
             .sort({ createdAt: -1 })
