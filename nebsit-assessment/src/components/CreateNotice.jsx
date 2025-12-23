@@ -1,22 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Calendar, Upload, X } from 'lucide-react';
 import './CreateNotice.css';
 
 const CreateNotice = ({ onBack }) => {
     const [formData, setFormData] = useState({
         target: '',
+        department: '',
         noticeTitle: '',
         employeeId: '',
         employeeName: '',
         position: '',
-        noticeType: '',
+        noticeTypes: [],
         publishDate: '',
         noticeBody: '',
         attachments: []
     });
+    const [isNoticeTypeOpen, setIsNoticeTypeOpen] = useState(false);
+    const multiSelectRef = useRef(null);
+
+    const noticeTypeOptions = [
+        'Warning / Disciplinary',
+        'Performance Improvement',
+        'Appreciation / Recognition',
+        'Attendance / Leave Issue',
+        'Payroll / Compensation',
+        'Contract / Role Update',
+        'Advisory / Personal Reminder'
+    ];
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (multiSelectRef.current && !multiSelectRef.current.contains(event.target)) {
+                setIsNoticeTypeOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const toggleNoticeType = (type) => {
+        setFormData(prev => ({
+            ...prev,
+            noticeTypes: prev.noticeTypes.includes(type)
+                ? prev.noticeTypes.filter(t => t !== type)
+                : [...prev.noticeTypes, type]
+        }));
     };
 
     const handleFileUpload = (e) => {
@@ -97,6 +131,28 @@ const CreateNotice = ({ onBack }) => {
                     </select>
                 </div>
 
+                {/* Department Selection - Conditional */}
+                {formData.target === 'department' && (
+                    <div className="form-section">
+                        <label className="form-label">Select Department *</label>
+                        <select
+                            className="form-select"
+                            value={formData.department}
+                            onChange={(e) => handleInputChange('department', e.target.value)}
+                        >
+                            <option value="">Select department</option>
+                            <option value="all">All Department</option>
+                            <option value="finance">Finance</option>
+                            <option value="sales">Sales Team</option>
+                            <option value="web">Web Team</option>
+                            <option value="database">Database Team</option>
+                            <option value="admin">Admin</option>
+                            <option value="individual">Individual</option>
+                            <option value="hr">HR</option>
+                        </select>
+                    </div>
+                )}
+
                 {/* Notice Title */}
                 <div className="form-section">
                     <label className="form-label">Notice Title *</label>
@@ -157,17 +213,43 @@ const CreateNotice = ({ onBack }) => {
                     <div className="grid-2-columns">
                         <div className="form-field">
                             <label className="form-label">Notice Type</label>
-                            <select
-                                className="form-select"
-                                value={formData.noticeType}
-                                onChange={(e) => handleInputChange('noticeType', e.target.value)}
-                            >
-                                <option value="">Select notice type</option>
-                                <option value="general">General</option>
-                                <option value="warning">Warning</option>
-                                <option value="information">Information</option>
-                                <option value="circular">Circular</option>
-                            </select>
+                            <div className="multi-select-container" ref={multiSelectRef}>
+                                <button
+                                    type="button"
+                                    className="multi-select-trigger"
+                                    onClick={() => setIsNoticeTypeOpen(!isNoticeTypeOpen)}
+                                >
+                                    <span className="multi-select-placeholder">
+                                        {formData.noticeTypes.length > 0
+                                            ? `${formData.noticeTypes.length} selected`
+                                            : 'Select notice type'}
+                                    </span>
+                                    <svg
+                                        className={`multi-select-arrow ${isNoticeTypeOpen ? 'open' : ''}`}
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 16 16"
+                                        fill="none"
+                                    >
+                                        <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                </button>
+                                {isNoticeTypeOpen && (
+                                    <div className="multi-select-dropdown">
+                                        {noticeTypeOptions.map((option) => (
+                                            <label key={option} className="multi-select-option">
+                                                <input
+                                                    type="checkbox"
+                                                    className="multi-select-checkbox"
+                                                    checked={formData.noticeTypes.includes(option)}
+                                                    onChange={() => toggleNoticeType(option)}
+                                                />
+                                                <span className="multi-select-label">{option}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <div className="form-field">
                             <label className="form-label">Publish Date</label>
@@ -177,7 +259,11 @@ const CreateNotice = ({ onBack }) => {
                                     className="form-input date-input"
                                     value={formData.publishDate}
                                     onChange={(e) => handleInputChange('publishDate', e.target.value)}
+                                    style={{ colorScheme: 'light' }}
                                 />
+                                {!formData.publishDate && (
+                                    <span className="date-placeholder">Select Publishing Date</span>
+                                )}
                                 <Calendar size={18} className="calendar-icon-input" />
                             </div>
                         </div>
