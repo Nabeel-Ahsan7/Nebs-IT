@@ -14,14 +14,15 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'notices/uploads')));
 
+const uri = process.env.MONGODB_URI;
 // Database connection
-mongoose.connect(process.env.MONGODB_URI, {
+mongoose.connect(uri, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
     .then(() => {
         console.log('✅ Connected to MongoDB');
-        console.log('Database:', process.env.MONGODB_URI);
+        console.log('Database:', uri);
     })
     .catch((error) => {
         console.error('❌ MongoDB connection error:', error);
