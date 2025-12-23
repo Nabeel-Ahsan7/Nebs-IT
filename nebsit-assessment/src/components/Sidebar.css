@@ -185,7 +185,3 @@
 .sidebar::-webkit-scrollbar-thumb:hover {
     background: #CBD5E1;
 }
-
-/* Responsive Design */
-@media (max-width: 1024px) {
- 

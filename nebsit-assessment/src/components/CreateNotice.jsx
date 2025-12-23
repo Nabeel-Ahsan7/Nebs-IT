@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Calendar, Upload, X } from 'lucide-react';
 import './CreateNotice.css';
+import { noticeAPI, departmentAPI, employeeAPI } from '../services/api';
 
 const CreateNotice = ({ onBack }) => {
     const [formData, setFormData] = useState({
@@ -18,6 +19,13 @@ const CreateNotice = ({ onBack }) => {
     const [isNoticeTypeOpen, setIsNoticeTypeOpen] = useState(false);
     const multiSelectRef = useRef(null);
 
+    // Data states
+    const [departments, setDepartments] = useState([]);
+    const [employees, setEmployees] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [success, setSuccess] = useState(null);
+
     const noticeTypeOptions = [
         'Warning / Disciplinary',
         'Performance Improvement',
@@ -27,6 +35,53 @@ const CreateNotice = ({ onBack }) => {
         'Contract / Role Update',
         'Advisory / Personal Reminder'
     ];
+
+    // Fetch departments and employees on mount
+    useEffect(() => {
+        fetchDepartments();
+        fetchEmployees();
+    }, []);
+
+    // Fetch departments
+    const fetchDepartments = async () => {
+        try {
+            const response = await departmentAPI.getAll();
+            if (response.success) {
+                setDepartments(response.data);
+            }
+        } catch (err) {
+            console.error('Error fetching departments:', err);
+        }
+    };
+
+    // Fetch employees
+    const fetchEmployees = async (departmentId = null) => {
+        try {
+            const params = departmentId ? { department_id: departmentId } : {};
+            const response = await employeeAPI.getAll(params);
+            if (response.success) {
+                setEmployees(response.data);
+            }
+        } catch (err) {
+            console.error('Error fetching employees:', err);
+        }
+    };
+
+    // Handle employee selection and auto-fill
+    const handleEmployeeSelect = async (employeeId) => {
+        handleInputChange('employeeId', employeeId);
+
+        if (employeeId) {
+            const selectedEmployee = employees.find(emp => emp._id === employeeId);
+            if (selectedEmployee) {
+                handleInputChange('employeeName', selectedEmployee.name);
+                handleInputChange('position', selectedEmployee.department_id?._id || '');
+            }
+        } else {
+            handleInputChange('employeeName', '');
+            handleInputChange('position', '');
+        }
+    };
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -95,14 +150,103 @@ const CreateNotice = ({ onBack }) => {
         if (onBack) onBack();
     };
 
-    const handleSaveDraft = () => {
-        console.log('Saving as draft:', formData);
-        // Add save draft logic
+    const handleSaveDraft = async () => {
+        await handleSubmit(0); // 0 = Draft
     };
 
-    const handlePublish = () => {
-        console.log('Publishing notice:', formData);
-        // Add publish logic
+    const handlePublish = async () => {
+        await handleSubmit(1); // 1 = Published
+    };
+
+    const handleSubmit = async (status) => {
+        try {
+            setLoading(true);
+            setError(null);
+            setSuccess(null);
+
+            // Validate required fields
+            if (!formData.noticeTitle || formData.noticeTitle.trim() === '') {
+                setError('Notice title is required');
+                return;
+            }
+
+            if (formData.noticeTypes.length === 0) {
+                setError('Please select at least one notice type');
+                return;
+            }
+
+            if (!formData.noticeBody || formData.noticeBody.trim() === '') {
+                setError('Notice body is required');
+                return;
+            }
+
+            if (!formData.target) {
+                setError('Please select target (Individual or Department)');
+                return;
+            }
+
+            if (formData.target === 'individual' && !formData.employeeId) {
+                setError('Please select an employee');
+                return;
+            }
+
+            if (formData.target === 'department' && !formData.department) {
+                setError('Please select a department');
+                return;
+            }
+
+            // Upload attachments first if any
+            let attachmentUrls = [];
+            if (formData.attachments.length > 0) {
+                const files = formData.attachments.map(att => att.file);
+                const uploadResponse = await noticeAPI.uploadFiles(files);
+                if (uploadResponse.success) {
+                    attachmentUrls = uploadResponse.data;
+                }
+            }
+
+            // Prepare notice data for API
+            const noticeData = {
+                title: formData.noticeTitle,
+                type: formData.noticeTypes,
+                notice_body: formData.noticeBody,
+                target: formData.target === 'individual' ? 0 : 1,
+                status: status,
+                attachments: attachmentUrls
+            };
+
+            // Add publish date if provided, otherwise use current date for published notices
+            if (formData.publishDate) {
+                noticeData.published_date = formData.publishDate;
+            } else if (status === 1) {
+                // If publishing without a date, use today's date
+                noticeData.published_date = new Date().toISOString().split('T')[0];
+            }
+
+            // Add employee or department
+            if (formData.target === 'individual') {
+                noticeData.employee_id = formData.employeeId;
+            } else {
+                noticeData.department_id = formData.department;
+            }
+
+            // Create notice
+            const response = await noticeAPI.create(noticeData);
+
+            if (response.success) {
+                setSuccess(status === 1 ? 'Notice published successfully!' : 'Notice saved as draft!');
+
+                // Reset form after 2 seconds
+                setTimeout(() => {
+                    if (onBack) onBack();
+                }, 2000);
+            }
+        } catch (err) {
+            console.error('Error creating notice:', err);
+            setError(err.message || 'Failed to create notice');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -114,6 +258,33 @@ const CreateNotice = ({ onBack }) => {
                 </button>
                 <h1 className="page-title">Create a Notice</h1>
             </div>
+
+            {/* Error and Success Messages */}
+            {error && (
+                <div style={{
+                    padding: '12px',
+                    background: '#fee',
+                    color: '#c00',
+                    borderRadius: '4px',
+                    marginBottom: '20px',
+                    border: '1px solid #fcc'
+                }}>
+                    {error}
+                </div>
+            )}
+
+            {success && (
+                <div style={{
+                    padding: '12px',
+                    background: '#efe',
+                    color: '#070',
+                    borderRadius: '4px',
+                    marginBottom: '20px',
+                    border: '1px solid #cfc'
+                }}>
+                    {success}
+                </div>
+            )}
 
             {/* Main Form Card */}
             <div className="form-card">
@@ -141,14 +312,11 @@ const CreateNotice = ({ onBack }) => {
                             onChange={(e) => handleInputChange('department', e.target.value)}
                         >
                             <option value="">Select department</option>
-                            <option value="all">All Department</option>
-                            <option value="finance">Finance</option>
-                            <option value="sales">Sales Team</option>
-                            <option value="web">Web Team</option>
-                            <option value="database">Database Team</option>
-                            <option value="admin">Admin</option>
-                            <option value="individual">Individual</option>
-                            <option value="hr">HR</option>
+                            {departments.map((dept) => (
+                                <option key={dept._id} value={dept._id}>
+                                    {dept.name}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 )}
@@ -174,11 +342,14 @@ const CreateNotice = ({ onBack }) => {
                                 <select
                                     className="form-select"
                                     value={formData.employeeId}
-                                    onChange={(e) => handleInputChange('employeeId', e.target.value)}
+                                    onChange={(e) => handleEmployeeSelect(e.target.value)}
                                 >
                                     <option value="">Select employee ID</option>
-                                    <option value="EMP001">EMP001</option>
-                                    <option value="EMP002">EMP002</option>
+                                    {employees.map((emp) => (
+                                        <option key={emp._id} value={emp._id}>
+                                            {emp.employee_code}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                             <div className="form-field">
@@ -186,22 +357,24 @@ const CreateNotice = ({ onBack }) => {
                                 <input
                                     type="text"
                                     className="form-input"
-                                    placeholder="Enter employee full name"
+                                    placeholder="Employee name"
                                     value={formData.employeeName}
-                                    onChange={(e) => handleInputChange('employeeName', e.target.value)}
+                                    readOnly
                                 />
                             </div>
                             <div className="form-field">
-                                <label className="form-label">Position</label>
+                                <label className="form-label">Department</label>
                                 <select
                                     className="form-select"
                                     value={formData.position}
-                                    onChange={(e) => handleInputChange('position', e.target.value)}
+                                    disabled
                                 >
-                                    <option value="">Select employee department</option>
-                                    <option value="IT">IT Department</option>
-                                    <option value="HR">HR Department</option>
-                                    <option value="Sales">Sales Department</option>
+                                    <option value="">Employee department</option>
+                                    {departments.map((dept) => (
+                                        <option key={dept._id} value={dept._id}>
+                                            {dept.name}
+                                        </option>
+                                    ))}
                                 </select>
                             </div>
                         </div>
@@ -325,14 +498,14 @@ const CreateNotice = ({ onBack }) => {
 
                 {/* Footer Actions */}
                 <div className="form-footer">
-                    <button className="btn-cancel" onClick={handleCancel}>
+                    <button className="btn-cancel" onClick={handleCancel} disabled={loading}>
                         Cancel
                     </button>
-                    <button className="btn-draft" onClick={handleSaveDraft}>
-                        Save as Draft
+                    <button className="btn-draft" onClick={handleSaveDraft} disabled={loading}>
+                        {loading ? 'Saving...' : 'Save as Draft'}
                     </button>
-                    <button className="btn-publish" onClick={handlePublish}>
-                        Publish Notice
+                    <button className="btn-publish" onClick={handlePublish} disabled={loading}>
+                        {loading ? 'Publishing...' : 'Publish Notice'}
                     </button>
                 </div>
             </div>

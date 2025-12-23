@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Calendar, Eye, Edit, MoreVertical, ChevronLeft, ChevronRight } from 'lucide-react';
 import './NoticeManagement.css';
+import { noticeAPI, departmentAPI, employeeAPI } from '../services/api';
+import ViewNotice from './ViewNotice';
+import EditNotice from './EditNotice';
 
 const NoticeManagement = ({ onCreateNotice }) => {
-    const activeNotices = 8;
-    const draftNotices = 4;
+    const [activeNotices, setActiveNotices] = useState(0);
+    const [draftNotices, setDraftNotices] = useState(0);
 
     // Filter states
     const [filterType, setFilterType] = useState('');
@@ -13,10 +16,91 @@ const NoticeManagement = ({ onCreateNotice }) => {
     const [filterDate, setFilterDate] = useState('');
     const [selectedNotices, setSelectedNotices] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
-    const totalPages = 5;
+    const [totalPages, setTotalPages] = useState(1);
 
-    // Sample data
-    const notices = [
+    // Data states
+    const [notices, setNotices] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Modal states
+    const [viewModalOpen, setViewModalOpen] = useState(false);
+    const [editModalOpen, setEditModalOpen] = useState(false);
+    const [selectedNoticeId, setSelectedNoticeId] = useState(null);
+
+    // Fetch notices from API
+    useEffect(() => {
+        fetchNotices();
+    }, [currentPage, filterType, filterSearch, filterStatus, filterDate]);
+
+    const fetchNotices = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+
+            // Build query parameters
+            const params = {
+                page: currentPage,
+                limit: 10
+            };
+
+            // Add filters
+            if (filterType === 'department') {
+                params.target = 1;
+            } else if (filterType === 'individual') {
+                params.target = 0;
+            }
+
+            if (filterStatus === 'publish') {
+                params.status = 1;
+                params.publishStatus = 'published'; // Only published (past/today dates)
+            } else if (filterStatus === 'unpublished') {
+                params.status = 1;
+                params.publishStatus = 'unpublished'; // Only unpublished (future dates)
+            } else if (filterStatus === 'draft') {
+                params.status = 0;
+            }
+
+            if (filterDate) {
+                params.published_date = filterDate;
+            }
+
+            if (filterSearch) {
+                params.search = filterSearch;
+            }
+
+            const response = await noticeAPI.getAll(params);
+
+            if (response.success) {
+                setNotices(response.data);
+                setTotalPages(response.pagination.totalPages);
+
+                // Calculate stats - active means published and date is today or past
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const active = response.data.filter(n => {
+                    if (n.status === 0) return false;
+                    if (!n.published_date) return true;
+                    const publishDate = new Date(n.published_date);
+                    publishDate.setHours(0, 0, 0, 0);
+                    return publishDate <= today;
+                }).length;
+
+                const draft = response.data.filter(n => n.status === 0).length;
+                setActiveNotices(active);
+                setDraftNotices(draft);
+            }
+        } catch (err) {
+            console.error('Error fetching notices:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Sample data - only used as fallback
+    const sampleNotices = [
         {
             id: 1,
             title: 'Annual Company Meeting 2024',
@@ -88,11 +172,12 @@ const NoticeManagement = ({ onCreateNotice }) => {
         setFilterSearch('');
         setFilterStatus('');
         setFilterDate('');
+        setCurrentPage(1);
     };
 
     const handleSelectAll = (e) => {
         if (e.target.checked) {
-            setSelectedNotices(notices.map(n => n.id));
+            setSelectedNotices(notices.map(n => n._id));
         } else {
             setSelectedNotices([]);
         }
@@ -106,8 +191,100 @@ const NoticeManagement = ({ onCreateNotice }) => {
         }
     };
 
+    // Helper function to format notice type
+    const formatNoticeType = (types) => {
+        if (!types || types.length === 0) return '-';
+        const fullText = types.join(', ');
+        if (fullText.length > 30) {
+            return fullText.substring(0, 30) + '...';
+        }
+        return fullText;
+    };
+
+    // Helper function to get full notice type for tooltip
+    const getFullNoticeType = (types) => {
+        if (!types || types.length === 0) return '-';
+        return types.join(', ');
+    };
+
+    // Helper function to format target
+    const formatTarget = (notice) => {
+        if (notice.target === 0) {
+            return notice.employee_id ? `${notice.employee_id.name} (${notice.employee_id.employee_code})` : 'Individual';
+        } else {
+            return notice.department_id ? notice.department_id.name : 'Department';
+        }
+    };
+
+    // Helper function to format date
+    const formatDate = (date) => {
+        if (!date) return '-';
+        return new Date(date).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+    };
+
+    // Helper function to get status text
+    const getStatusText = (status, publishedDate) => {
+        if (status === 0) {
+            return 'Draft';
+        }
+
+        // Check if published_date is in the future
+        if (publishedDate) {
+            const publishDate = new Date(publishedDate);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            publishDate.setHours(0, 0, 0, 0);
+
+            if (publishDate > today) {
+                return 'Unpublished';
+            }
+        }
+
+        return 'Published';
+    };
+
+    // Handle view notice
+    const handleViewNotice = (noticeId) => {
+        setSelectedNoticeId(noticeId);
+        setViewModalOpen(true);
+    };
+
+    // Handle edit notice
+    const handleEditNotice = (noticeId) => {
+        setSelectedNoticeId(noticeId);
+        setEditModalOpen(true);
+    };
+
+    // Handle close modals
+    const handleCloseModals = () => {
+        setViewModalOpen(false);
+        setEditModalOpen(false);
+        setSelectedNoticeId(null);
+    };
+
+    // Handle successful edit
+    const handleEditSuccess = () => {
+        fetchNotices();
+    };
+
     return (
         <div className="notice-management-wrapper">
+            {error && (
+                <div style={{
+                    padding: '10px',
+                    background: '#fee',
+                    color: '#c00',
+                    borderRadius: '4px',
+                    marginBottom: '20px'
+                }}>
+                    Error: {error}
+                </div>
+            )}
+
             <div className="notice-management">
                 {/* Left Side - Title and Stats */}
                 <div className="notice-left">
@@ -212,40 +389,60 @@ const NoticeManagement = ({ onCreateNotice }) => {
 
                     {/* Table Body */}
                     <div className="table-body">
-                        {notices.map((notice) => (
-                            <div key={notice.id} className="table-row">
-                                <div className="table-cell cell-checkbox">
-                                    <input
-                                        type="checkbox"
-                                        className="table-checkbox"
-                                        checked={selectedNotices.includes(notice.id)}
-                                        onChange={() => handleSelectNotice(notice.id)}
-                                    />
-                                </div>
-                                <div className="table-cell cell-title">{notice.title}</div>
-                                <div className="table-cell cell-notice-type">{notice.noticeType}</div>
-                                <div className="table-cell cell-target">{notice.target}</div>
-                                <div className="table-cell cell-published">
-                                    {notice.publishedOn || '-'}
-                                </div>
-                                <div className="table-cell cell-status">
-                                    <span className={`status-badge status-${notice.status.toLowerCase()}`}>
-                                        {notice.status}
-                                    </span>
-                                </div>
-                                <div className="table-cell cell-actions">
-                                    <button className="action-btn btn-view" title="View">
-                                        <Eye size={18} />
-                                    </button>
-                                    <button className="action-btn btn-edit" title="Edit">
-                                        <Edit size={18} />
-                                    </button>
-                                    <button className="action-btn btn-more" title="More options">
-                                        <MoreVertical size={18} />
-                                    </button>
-                                </div>
+                        {loading ? (
+                            <div style={{ padding: '20px', textAlign: 'center' }}>
+                                Loading notices...
                             </div>
-                        ))}
+                        ) : notices.length === 0 ? (
+                            <div style={{ padding: '20px', textAlign: 'center' }}>
+                                No notices found
+                            </div>
+                        ) : (
+                            notices.map((notice) => (
+                                <div key={notice._id} className="table-row">
+                                    <div className="table-cell cell-checkbox">
+                                        <input
+                                            type="checkbox"
+                                            className="table-checkbox"
+                                            checked={selectedNotices.includes(notice._id)}
+                                            onChange={() => handleSelectNotice(notice._id)}
+                                        />
+                                    </div>
+                                    <div className="table-cell cell-title">{notice.title}</div>
+                                    <div className="table-cell cell-notice-type" title={getFullNoticeType(notice.type)}>
+                                        {formatNoticeType(notice.type)}
+                                    </div>
+                                    <div className="table-cell cell-target">{formatTarget(notice)}</div>
+                                    <div className="table-cell cell-published">
+                                        {formatDate(notice.published_date)}
+                                    </div>
+                                    <div className="table-cell cell-status">
+                                        <span className={`status-badge status-${getStatusText(notice.status, notice.published_date).toLowerCase()}`}>
+                                            {getStatusText(notice.status, notice.published_date)}
+                                        </span>
+                                    </div>
+                                    <div className="table-cell cell-actions">
+                                        <button
+                                            className="action-btn btn-view"
+                                            title="View"
+                                            onClick={() => handleViewNotice(notice._id)}
+                                        >
+                                            <Eye size={18} />
+                                        </button>
+                                        <button
+                                            className="action-btn btn-edit"
+                                            title="Edit"
+                                            onClick={() => handleEditNotice(notice._id)}
+                                        >
+                                            <Edit size={18} />
+                                        </button>
+                                        <button className="action-btn btn-more" title="More options">
+                                            <MoreVertical size={18} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
 
@@ -278,6 +475,22 @@ const NoticeManagement = ({ onCreateNotice }) => {
                     </button>
                 </div>
             </div>
+
+            {/* Modals */}
+            {viewModalOpen && selectedNoticeId && (
+                <ViewNotice
+                    noticeId={selectedNoticeId}
+                    onClose={handleCloseModals}
+                />
+            )}
+
+            {editModalOpen && selectedNoticeId && (
+                <EditNotice
+                    noticeId={selectedNoticeId}
+                    onClose={handleCloseModals}
+                    onSuccess={handleEditSuccess}
+                />
+            )}
         </div>
     );
 };

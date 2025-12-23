@@ -507,6 +507,9 @@
     width: 12%;
     min-width: 110px;
     flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .cell-target {
